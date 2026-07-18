@@ -2,7 +2,7 @@
  * main.c
  *
  * Entry point for the Linux System Monitor.
- * Milestone 5: adds process list with CPU%, MEM%, sorted by CPU usage.
+ * Milestone 6: adds network interface RX/TX throughput and state.
  */
 
 #include <stdio.h>
@@ -12,9 +12,11 @@
 #include "mem.h"
 #include "disk.h"
 #include "process.h"
+#include "net.h"
 
-/* How long to sample /proc/stat (and per-process stat) over when
- * measuring CPU usage. 200ms balances responsiveness against noise. */
+/* How long to sample /proc/stat (and per-process stat, and
+ * /proc/net/dev) over when measuring rates. 200ms balances
+ * responsiveness against noise. */
 #define CPU_SAMPLE_INTERVAL_MS 200
 
 /* How many processes to show in the table, sorted by CPU usage. */
@@ -26,6 +28,7 @@ int main(void) {
     mem_info_t mem;
     disk_info_t disk;
     process_info_t procs;
+    net_info_t net;
 
     if (sysinfo_collect(&sys) != 0) {
         fprintf(stderr, "Fatal: could not collect system information.\n");
@@ -61,6 +64,13 @@ int main(void) {
     }
     process_sort(&procs, PROCESS_SORT_CPU);
     process_print(&procs, PROCESS_DISPLAY_ROWS);
+
+    printf("\nSampling network throughput (%dms)...\n", CPU_SAMPLE_INTERVAL_MS);
+    if (net_collect(&net, CPU_SAMPLE_INTERVAL_MS) != 0) {
+        fprintf(stderr, "Fatal: could not collect network information.\n");
+        return EXIT_FAILURE;
+    }
+    net_print(&net);
 
     return EXIT_SUCCESS;
 }
