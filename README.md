@@ -1,284 +1,327 @@
 # Linux System Monitor
 
-![C](https://img.shields.io/badge/C-C17-blue)
-![Platform](https://img.shields.io/badge/Platform-Linux-success)
-![Build](https://img.shields.io/badge/Build-GNU%20Make-orange)
-![License](https://img.shields.io/badge/License-MIT-green)
+A modular terminal-based Linux system monitor written in **C**, built as a systems programming portfolio project. Inspired by tools like **top** and **htop**, it collects live system information directly from the Linux kernel using the **/proc** filesystem, **/sys**, POSIX APIs, and standard Linux system calls.
 
-A terminal-based Linux system monitor written entirely in **C**, built as a
-systems programming portfolio project. Inspired by tools like **top** and
-**htop**, it reads live system information directly from the Linux kernel
-through the **/proc filesystem** and **POSIX APIs**, without relying on
-third-party libraries.
-
-The project is developed incrementally using milestone-based development.
-Every module is implemented, documented, tested, and kept free of compiler
-warnings before moving on to the next feature.
+This project was developed incrementally with a modular architecture, making each subsystem independent, reusable, and easy to maintain.
 
 ---
 
 ## Features
 
-- Written in modern **C17**
-- Reads live system information from the Linux kernel
-- Uses the **/proc filesystem** and **POSIX system calls**
-- Modular architecture
-- Zero compiler warnings (`-Wall -Wextra -Werror`)
-- No external libraries
-- Compatible with Linux and WSL2
-- Designed for learning Linux systems programming
-
----
-
-## Project Goals
-
-This project aims to strengthen practical knowledge of:
-
-- Linux internals
-- Systems programming in C
-- POSIX APIs
-- `/proc` filesystem
-- Defensive programming
-- Modular software architecture
-
-Rather than wrapping existing utilities, every module retrieves and processes
-system information directly from Linux interfaces.
-
----
-
-## Roadmap
-
-| Version | Module | Status |
-|----------|--------|--------|
-| v0.1.0 | System Information | ✅ Complete |
-| v0.2.0 | CPU Usage | 🚧 In Progress |
-| v0.3.0 | Memory Monitoring | ⏳ Planned |
-| v0.4.0 | Disk Statistics | ⏳ Planned |
-| v0.5.0 | Process Monitoring | ⏳ Planned |
-| v0.6.0 | Network Statistics | ⏳ Planned |
-| v0.7.0 | Logged-in Users | ⏳ Planned |
-| v0.8.0 | Live Refresh Dashboard | ⏳ Planned |
-| v1.0.0 | Stable Release | 🎯 Target |
-
----
-
-# Current Status
-
-## Milestone 1 — System Information Module
-
-### Implemented
-
+### System Information
 - Hostname
 - Kernel version
-- CPU architecture
+- System architecture
 - System uptime
-- Load average (1 / 5 / 15 minute)
+- Load averages
 
-### Coming Next
+### CPU Monitoring
+- CPU model
+- Number of cores
+- Current frequency
+- Real-time CPU utilization
 
-- CPU utilization
-- Memory statistics
-- Disk statistics
-- Running processes
-- Network statistics
-- Logged-in users
-- Live terminal dashboard
-- CLI arguments
+### Memory Monitoring
+- Total memory
+- Used memory
+- Free memory
+- Available memory
+- Swap usage
+
+### Disk Monitoring
+- Mounted filesystems
+- Filesystem type
+- Total space
+- Used space
+- Available space
+- Disk usage percentage
+
+### Process Monitoring
+- Live process list
+- PID
+- Process state
+- CPU usage
+- Memory usage
+- Resident Set Size (RSS)
+- Sort by:
+  - CPU usage
+  - Memory usage
+  - PID
+
+### Network Monitoring
+- Interface status
+- Bytes received
+- Bytes transmitted
+- Receive throughput
+- Transmit throughput
+
+### Logged-in Users
+- Displays currently logged-in users using the system.
+
+### Live Refresh
+- Automatic terminal refresh
+- Configurable refresh interval
+- Optional refresh count
+- Clean Ctrl+C handling
+
+### Command-Line Interface
+Supports:
+
+- Live refresh
+- Process sorting
+- Process row limits
+- Help menu
+- Kill by PID
+- Logging
+- Config file
+- Disable colored output
+
+### Colored Output
+- ANSI terminal colors
+- Automatically disabled when output is redirected
+- Manual disable option (`-x`)
+
+### Logging
+- Timestamped log file generation
+- Append-only logging
+
+### Configuration File
+Supports `sysmon.conf`
+
+Example:
+
+```text
+refresh=2
+rows=15
+sort=m
+color=off
+```
+
+Configuration precedence:
+
+```
+Built-in defaults
+        ↓
+Configuration file
+        ↓
+Command-line arguments
+```
+
+### Process Control
+Supports:
+
+- SIGTERM (`-k`)
+- SIGKILL (`-K`)
 
 ---
 
-## Project Structure
+# Technologies Used
+
+- C17
+- POSIX APIs
+- Linux `/proc`
+- Linux `/sys`
+- Make
+- GCC
+- ANSI Escape Codes
+
+---
+
+# Project Structure
 
 ```
 linux-system-monitor/
+│
 ├── include/
-│   └── sysinfo.h
+│   ├── cli.h
+│   ├── color.h
+│   ├── config.h
+│   ├── cpu.h
+│   ├── disk.h
+│   ├── log.h
+│   ├── mem.h
+│   ├── net.h
+│   ├── process.h
+│   ├── sysinfo.h
+│   └── users.h
+│
 ├── modules/
-│   └── sysinfo.c
+│   ├── cli.c
+│   ├── color.c
+│   ├── config.c
+│   ├── cpu.c
+│   ├── disk.c
+│   ├── log.c
+│   ├── mem.c
+│   ├── net.c
+│   ├── process.c
+│   ├── sysinfo.c
+│   └── users.c
+│
 ├── src/
 │   └── main.c
-├── build/                 # Generated during compilation
+│
 ├── Makefile
-├── .gitignore
 ├── LICENSE
 └── README.md
 ```
 
 ---
 
-## Requirements
+# Building
 
-- Linux (native or WSL2)
-- GCC with C17 support
-- GNU Make
+Clone the repository:
 
----
+```bash
+git clone https://github.com/SamRepository25/Linux-System-Monitor.git
+cd Linux-System-Monitor
+```
 
-## Build
+Build:
 
 ```bash
 make
 ```
 
-The project is compiled with:
-
-```bash
--std=c17 -Wall -Wextra -Werror
-```
-
-Any compiler warning is treated as an error to maintain clean,
-production-quality code.
-
-Object files and the executable are generated inside the `build/`
-directory.
-
----
-
-## Run
-
-```bash
-./build/sysmon
-```
-
-Or build and run together:
-
-```bash
-make run
-```
-
----
-
-## Example Output
-
-```text
-==============================
- Linux System Monitor v0.1.0
-==============================
-
-Hostname      : my-machine
-Kernel        : Linux 6.8.0
-Architecture  : x86_64
-Uptime        : 2h 14m 37s
-Load Average  : 0.15 0.22 0.19
-```
-
----
-
-## Clean
+Clean:
 
 ```bash
 make clean
 ```
 
-Removes the generated `build/` directory.
+Run:
 
----
-
-# Architecture
-
-```
-            Linux Kernel
-                  │
-      ┌───────────┴───────────┐
-      │                       │
-  POSIX APIs          /proc Filesystem
-      │                       │
-      └───────────┬───────────┘
-                  │
-          System Modules
-                  │
-          Terminal Interface
+```bash
+./build/sysmon
 ```
 
 ---
 
-# Design Decisions
+# Usage
 
-### No Dynamic Memory Allocation
+Show help
 
-The System Information module uses fixed-size structures instead of
-`malloc()` because all fields have well-defined maximum lengths on Linux.
+```bash
+./build/sysmon -h
+```
 
-Benefits:
+Live refresh every second
 
-- No memory leaks
-- Simpler implementation
-- Predictable memory usage
+```bash
+./build/sysmon -r 1
+```
+
+Refresh every 2 seconds for 10 updates
+
+```bash
+./build/sysmon -r 2 -n 10
+```
+
+Display only 5 processes
+
+```bash
+./build/sysmon -t 5
+```
+
+Sort by memory
+
+```bash
+./build/sysmon -s m
+```
+
+Sort by PID
+
+```bash
+./build/sysmon -s p
+```
+
+Terminate a process gracefully
+
+```bash
+./build/sysmon -k <PID>
+```
+
+Force terminate a process
+
+```bash
+./build/sysmon -K <PID>
+```
+
+Write logs
+
+```bash
+./build/sysmon -l run.log
+```
+
+Disable colored output
+
+```bash
+./build/sysmon -x
+```
 
 ---
 
-### Why `uname()`?
+# Example Output
 
-System identity information is retrieved using the POSIX `uname()` syscall
-instead of parsing `/proc`.
+```
+Status: CPU 6.4% MEM 34.1% DISK(/) 52%
 
-Advantages:
+=== CPU Information ===
+Model        : Intel Core i5
+Usage        : 6.4%
 
-- POSIX-compliant
-- Atomic retrieval
-- Cleaner implementation
-- More reliable than parsing multiple files
+=== Memory Information ===
+Used RAM     : 5.4 GB (34%)
 
----
-
-### Why `/proc`?
-
-Some information, such as uptime and load average, has no equivalent POSIX
-system call.
-
-Therefore the project reads:
-
-- `/proc/uptime`
-- `/proc/loadavg`
-
-directly from the Linux kernel.
+=== Processes ===
+PID      NAME           CPU%    MEM%
+1452     firefox        8.3%    6.1%
+2270     code           3.2%    4.8%
+```
 
 ---
 
-### Defensive Programming
+# Skills Demonstrated
 
-Every:
-
-- system call
-- file open
-- file read
-- parsing operation
-
-checks its return value.
-
-The program fails loudly instead of silently producing incorrect output.
-
----
-
-# Development Principles
-
-- Modular architecture
-- One milestone at a time
-- Zero compiler warnings
-- Defensive programming
-- Consistent code style
-- Clear documentation
-- Small, reviewable commits
+- Systems Programming
+- Linux Programming
+- POSIX System Calls
+- Modular Software Design
+- Process Management
+- File Parsing
+- Terminal Programming
+- Command-Line Interface Design
+- Build Automation
+- Software Architecture
+- Git & GitHub
 
 ---
 
 # Future Improvements
 
-- Interactive dashboard similar to `htop`
-- Configurable refresh interval
-- Process sorting
-- Colored terminal output
-- CPU usage graphs
-- Memory usage bars
-- JSON export
-- Logging support
-- Unit tests
-- GitHub Actions CI
+Possible future enhancements include:
+
+- Interactive keyboard navigation
+- Process search/filter
+- Multi-core CPU graphs
+- Export to JSON/CSV
+- Docker monitoring
+- GPU statistics
+- Temperature sensors
+- ncurses-based interface
 
 ---
 
-## License
+# License
 
-This project is licensed under the **MIT License**.
+This project is licensed under the MIT License.
 
-See the `LICENSE` file for details.
+---
+
+# Author
+
+**B SIMAK AHMED**
+
+Computer Science & Engineering Student
+
+GitHub: https://github.com/SamRepository25
