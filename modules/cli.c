@@ -1,10 +1,3 @@
-/*
- * cli.c
- *
- * Implementation of command-line argument parsing using getopt(),
- * the standard POSIX facility for this rather than hand-rolling
- * argv parsing.
- */
 #define _POSIX_C_SOURCE 200809L
 
 #include "cli.h"
@@ -12,13 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h> /* getopt, optarg, optind */
+#include <unistd.h> /* getopt, optarg, optind, optopt */
 
 /*
  * Parses a decimal string into `out`. Returns 0 on success, -1 if
- * the string isn't a valid non-negative integer (using strtol with
- * full error checking rather than atoi, which silently returns 0
- * for garbage input and can't distinguish "0" from "not a number").
+ * the string isn't a valid non-negative integer.
  */
 static int parse_uint(const char *str, int *out) {
     char *endptr;
@@ -31,23 +22,31 @@ static int parse_uint(const char *str, int *out) {
     return 0;
 }
 
-int cli_parse_args(int argc, char *argv[], monitor_config_t *config) {
-    if (config == NULL) {
-        return -1;
-    }
+void cli_set_defaults(monitor_config_t *config) {
+    if (config == NULL) return;
 
-    /* Defaults: one-shot mode, top 10 processes, sorted by CPU. */
     config->refresh_enabled = 0;
     config->refresh_interval_sec = CLI_DEFAULT_REFRESH_SEC;
     config->max_iterations = 0;
     config->process_rows = CLI_DEFAULT_PROCESS_ROWS;
     config->sort_key = CLI_DEFAULT_SORT_KEY;
 
+    config->kill_pid = 0;
+    config->kill_force = 0;
+
+    config->log_path[0] = '\0';
+    config->no_color = 0;
+}
+
+int cli_parse_args(int argc, char *argv[], monitor_config_t *config) {
+    if (config == NULL) {
+        return -1;
+    }
+
     int opt;
     /* Leading ':' makes getopt distinguish "missing argument" (':')
-     * from "unknown option" ('?') via its return value, so we can
-     * give more precise error messages below. */
-    while ((opt = getopt(argc, argv, ":r:n:t:s:h")) != -1) {
+     * from "unknown option" ('?'). */
+    while ((opt = getopt(argc, argv, ":r:n:t:s:k:K:l:xh")) != -1) {
         switch (opt) {
             case 'r': {
                 int value;
@@ -86,6 +85,34 @@ int cli_parse_args(int argc, char *argv[], monitor_config_t *config) {
                 config->sort_key = optarg[0];
                 break;
             }
+            case 'k': {
+                int value;
+                if (parse_uint(optarg, &value) != 0 || value <= 0) {
+                    fprintf(stderr, "Error: -k requires a positive PID\n");
+                    return -1;
+                }
+                config->kill_pid = value;
+                config->kill_force = 0; /* SIGTERM */
+                break;
+            }
+            case 'K': {
+                int value;
+                if (parse_uint(optarg, &value) != 0 || value <= 0) {
+                    fprintf(stderr, "Error: -K requires a positive PID\n");
+                    return -1;
+                }
+                config->kill_pid = value;
+                config->kill_force = 1; /* SIGKILL */
+                break;
+            }
+            case 'l': {
+                strncpy(config->log_path, optarg, CLI_LOG_PATH_LEN - 1);
+                config->log_path[CLI_LOG_PATH_LEN - 1] = '\0';
+                break;
+            }
+            case 'x':
+                config->no_color = 1;
+                break;
             case 'h':
                 cli_print_usage(argv[0]);
                 return 1;
@@ -114,11 +141,18 @@ void cli_print_usage(const char *prog_name) {
     printf("  -t ROWS      Number of process rows to display (default: %d)\n",
            CLI_DEFAULT_PROCESS_ROWS);
     printf("  -s KEY       Sort processes by: c=cpu, m=mem, p=pid (default: c)\n");
+    printf("  -k PID       Send SIGTERM to PID, then exit\n");
+    printf("  -K PID       Send SIGKILL to PID, then exit\n");
+    printf("  -l FILE      Append timestamped run summaries to FILE\n");
+    printf("  -x           Disable colored output\n");
     printf("  -h           Show this help message and exit\n");
+    printf("\n");
+    printf("A 'sysmon.conf' file in the current directory (key=value, '#' comments)\n");
+    printf("is loaded automatically if present. Recognized keys: refresh, rows, sort, color.\n");
     printf("\n");
     printf("Examples:\n");
     printf("  %s                  # one-shot report\n", prog_name);
     printf("  %s -r 2             # live refresh every 2 seconds until Ctrl+C\n", prog_name);
-    printf("  %s -r 1 -n 10       # live refresh every second, stop after 10 updates\n", prog_name);
-    printf("  %s -t 20 -s m       # one-shot report, top 20 processes by memory\n", prog_name);
+    printf("  %s -k 1234          # gracefully terminate PID 1234\n", prog_name);
+    printf("  %s -r 5 -l run.log  # live refresh, logging each cycle to run.log\n", prog_name);
 }
